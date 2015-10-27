@@ -43,15 +43,18 @@ public class SeatView extends View {
     private boolean showThumbnail = false;
 
     /** 每个座位的高度 - 57 */
-    private int currentHeight = 57;
+    private int seatHeight = 57;
     /** 每个座位的宽度 */
-    private int currentWidth = 57;
+    private int seatWidth = 57;
     /** 座位之间的间距 */
     private int seatDistance = 5;
-    private double T = 1.0D;
+    /** 缩略View的缩略比率*/
+    private double thumbRate = 1.0D;
 
-    private double t = -1.0D;
-    private double u = 1.0D;
+    /** 保存上一次的比率*/
+    private double preRate = -1.0D;
+    /** 缩放比率*/
+    private double rate = 1.0D;
     /** 是否可缩放 */
     private boolean canZoom = false;
 
@@ -67,7 +70,6 @@ public class SeatView extends View {
     private OnSeatClickListener mOnSeatClickListener = null;
 
     public static double a = 1.0E-006D;
-    private int I = 0;
     private int betweenOffset = 2;
     private int seatCheckSize = 50;
     private ThumbnailSeatView mThumbnailSeatView = null;
@@ -76,7 +78,6 @@ public class SeatView extends View {
     private int thumbnailViewStrokeWidth = 2;
     /** 选座缩略图 */
     private Bitmap mThumbnailViewBitMap = null;
-    private volatile int V = 1500;
     /** 左边距 */
     private int marginLeft = 0;
     /** 右边距 */
@@ -107,8 +108,8 @@ public class SeatView extends View {
     GestureDetector mGestureDetector = new GestureDetector(mContext,
             new GestureListener(this));
 
-    private ArrayList<SeatInfo> mListSeatInfos = null;
-    private ArrayList<ArrayList<Integer>> mListSeatConditions = null;
+    private ArrayList<SeatInfo> mSeatInfos = null;
+    private ArrayList<ArrayList<Integer>> mSeatConditions = null;
     private int iMaxPay = 0;
     private int totalCountEachRow;
     private int rows;
@@ -123,6 +124,16 @@ public class SeatView extends View {
         this.mContext = paramContext;
     }
 
+    /**
+     * 初始化View的参数，包括view的宽，高等
+     *
+     * @param row_count
+     * @param rows
+     * @param list_seatInfos
+     * @param list_seat_condtions
+     * @param paramThumbnailSeatView
+     * @param imaxPay
+     */
     public void init(int row_count, int rows,
                      ArrayList<SeatInfo> list_seatInfos,
                      ArrayList<ArrayList<Integer>> list_seat_condtions,
@@ -131,8 +142,8 @@ public class SeatView extends View {
         this.mThumbnailSeatView = paramThumbnailSeatView;
         this.totalCountEachRow = row_count;
         this.rows = rows;
-        this.mListSeatInfos = list_seatInfos;
-        this.mListSeatConditions = list_seat_condtions;
+        this.mSeatInfos = list_seatInfos;
+        this.mSeatConditions = list_seat_condtions;
         this.mBitMapSeatNormal = getBitmapFromDrawable((BitmapDrawable) this.mContext
                 .getResources().getDrawable(R.drawable.seat_normal));
         this.mBitMapSeatLock = getBitmapFromDrawable((BitmapDrawable) this.mContext
@@ -153,9 +164,9 @@ public class SeatView extends View {
                 .getDimensionPixelSize(R.dimen.seat_min_height);
         this.minWidth = this.mContext.getResources()
                 .getDimensionPixelSize(R.dimen.seat_min_width);
-        this.currentHeight = this.mContext.getResources()
+        this.seatHeight = this.mContext.getResources()
                 .getDimensionPixelSize(R.dimen.seat_init_height);
-        this.currentWidth = this.mContext.getResources()
+        this.seatWidth = this.mContext.getResources()
                 .getDimensionPixelSize(R.dimen.seat_init_width);
         this.seatCheckSize = this.mContext.getResources()
                 .getDimensionPixelSize(R.dimen.ss_seat_check_size);//30dp
@@ -165,39 +176,41 @@ public class SeatView extends View {
     }
 
     public static Bitmap getBitmapFromDrawable(
-            BitmapDrawable paramBitmapDrawable) {
-        return paramBitmapDrawable.getBitmap();
+            BitmapDrawable bitmapDrawable) {
+        return bitmapDrawable.getBitmap();
     }
 
     /**
+     * 绘制View与Thumbnail View的Seat的位置
      *
      * @param seatNum
      *            每排的座位顺序号
      * @param rowNum
      *            排号
      * @param paramBitmap
-     * @param paramCanvas1
-     * @param paramCanvas2
+     * @param canvas
+     * @param thumbCanvas
      * @param paramPaint
      */
     private void drawSeat(int seatNum, int rowNum, Bitmap paramBitmap,
-                          Canvas paramCanvas1, Canvas paramCanvas2, Paint paramPaint) {
+                          Canvas canvas, Canvas thumbCanvas, Paint paramPaint) {
         if (paramBitmap == null) {// 走道
-            paramCanvas1.drawRect(getSeatRect(seatNum, rowNum), paramPaint);
+            canvas.drawRect(getSeatRect(seatNum, rowNum), paramPaint);
             if (this.showThumbnail) {
-                paramCanvas2.drawRect(d(seatNum, rowNum), paramPaint);
+                thumbCanvas.drawRect(getThumbnailSeatRect(seatNum, rowNum), paramPaint);
             }
         } else {
-            paramCanvas1.drawBitmap(paramBitmap, null, getSeatRect(seatNum, rowNum),
+            canvas.drawBitmap(paramBitmap, null, getSeatRect(seatNum, rowNum),
                     paramPaint);
             if (this.showThumbnail) {
-                paramCanvas2.drawBitmap(paramBitmap, null, d(seatNum, rowNum),
+                thumbCanvas.drawBitmap(paramBitmap, null, getThumbnailSeatRect(seatNum, rowNum),
                         paramPaint);
             }
         }
     }
 
     /**
+     * 根据传入的排，列位置计算其在view的Rect
      *
      * @param seatNum
      *            每排的座位号
@@ -207,9 +220,9 @@ public class SeatView extends View {
      */
     private Rect getSeatRect(int seatNum, int rowNum) {
         try {
-            Rect localRect = new Rect(this.marginLeft + seatNum * this.currentWidth + this.seatDistance,
-                    this.marginTop + rowNum * this.currentHeight + this.seatDistance, this.marginLeft + (seatNum + 1)
-                    * this.currentWidth - this.seatDistance, this.marginTop + (rowNum + 1) * this.currentHeight
+            Rect localRect = new Rect(this.marginLeft + seatNum * this.seatWidth + this.seatDistance,
+                    this.marginTop + rowNum * this.seatHeight + this.seatDistance, this.marginLeft + (seatNum + 1)
+                    * this.seatWidth - this.seatDistance, this.marginTop + (rowNum + 1) * this.seatHeight
                     - this.seatDistance);
             return localRect;
         } catch (Exception localException) {
@@ -218,13 +231,20 @@ public class SeatView extends View {
         return new Rect();
     }
 
-    private Rect d(int seatNum, int rowNum) {
+    /**
+     * 根据传入的排，列位置计算其在view的Rect
+     *
+     * @param seatNum
+     * @param rowNum
+     * @return
+     */
+    private Rect getThumbnailSeatRect(int seatNum, int rowNum) {
         try {
             Rect localRect = new Rect(
-                    5 + (int) (this.T * (this.marginLeft + seatNum * this.currentWidth + this.seatDistance)),
-                    5 + (int) (this.T * (this.marginTop + rowNum * this.currentHeight + this.seatDistance)),
-                    5 + (int) (this.T * (this.marginLeft + (seatNum + 1) * this.currentWidth - this.seatDistance)),
-                    5 + (int) (this.T * (this.marginTop + (rowNum + 1) * this.currentHeight - this.seatDistance)));
+                    5 + (int) (this.thumbRate * (this.marginLeft + seatNum * this.seatWidth + this.seatDistance)),
+                    5 + (int) (this.thumbRate * (this.marginTop + rowNum * this.seatHeight + this.seatDistance)),
+                    5 + (int) (this.thumbRate * (this.marginLeft + (seatNum + 1) * this.seatWidth - this.seatDistance)),
+                    5 + (int) (this.thumbRate * (this.marginTop + (rowNum + 1) * this.seatHeight - this.seatDistance)));
             return localRect;
         } catch (Exception localException) {
             localException.printStackTrace();
@@ -232,24 +252,24 @@ public class SeatView extends View {
         return new Rect();
     }
 
-    private Rect e(int paramInt1, int paramInt2) {
-        int i1;
-        int i3;
+    private Rect getThumbnailRect(int paramInt1, int paramInt2) {
+        int width;
+        int height;
         try {
             if (getMeasuredWidth() < this.mWidth) {
-                i1 = getMeasuredWidth();
+                width = getMeasuredWidth();
             } else {
-                i1 = this.mWidth;
+                width = this.mWidth;
             }
             if (getMeasuredHeight() < this.mHeight) {
-                i3 = getMeasuredHeight();
+                height = getMeasuredHeight();
             } else {
-                i3 = this.mHeight;
+                height = this.mHeight;
             }
-            return new Rect((int) (5.0D + this.T * paramInt1),
-                    (int) (5.0D + this.T * paramInt2), (int) (5.0D + this.T
-                    * paramInt1 + i1 * this.T), (int) (5.0D + this.T
-                    * paramInt2 + i3 * this.T));
+            return new Rect((int) (5.0D + this.thumbRate * paramInt1),
+                    (int) (5.0D + this.thumbRate * paramInt2), (int) (5.0D + this.thumbRate
+                    * paramInt1 + width * this.thumbRate), (int) (5.0D + this.thumbRate
+                    * paramInt2 + height * this.thumbRate));
 
         } catch (Exception e) {
             // TODO: handle exception
@@ -273,7 +293,7 @@ public class SeatView extends View {
             this.visibleSeatMarginTop = 0;
         }
         Paint localPaint2 = new Paint();
-        if (this.currentWidth != 0 && this.currentHeight != 0) {
+        if (this.seatWidth != 0 && this.seatHeight != 0) {
 
             this.mThumbnailViewBitMap = Bitmap.createBitmap(this.thumbnailViewWidth,
                     this.thumbnailViewHeight, Bitmap.Config.ARGB_8888);
@@ -287,21 +307,21 @@ public class SeatView extends View {
             this.mThumbnailCanvas.drawPaint(localPaint1);
 
             double d1 = (this.thumbnailViewWidth - 10.0D)
-                    / (this.currentWidth * this.totalCountEachRow + this.marginLeft + this.marginRight); // -
+                    / (this.seatWidth * this.totalCountEachRow + this.marginLeft + this.marginRight); // -
             // v0/v2
             double d2 = (this.thumbnailViewHeight - 10.0D)
-                    / (this.currentHeight * this.rows);
+                    / (this.seatHeight * this.rows);
             if (d1 <= d2) {
-                this.T = d1;
+                this.thumbRate = d1;
             } else {
-                this.T = d2;
+                this.thumbRate = d2;
             }
             if(this.showThumbnail){
                 localPaint2.setColor(-16777216);
                 if(firstLoadBg){
                     firstLoadBg = false;
-                    tempX = 5+(int) (this.mWidth * this.T);
-                    tempY = 5 + (int) (this.mHeight * this.T);
+                    tempX = 5+(int) (this.mWidth * this.thumbRate);
+                    tempY = 5 + (int) (this.mHeight * this.thumbRate);
                 }
                 this.mThumbnailCanvas.drawRect(5.0F, 5.0F, tempX,
                         tempY, localPaint2);
@@ -309,37 +329,37 @@ public class SeatView extends View {
         }
 
         paramCanvas.translate(this.rowXOffset, this.rowYOffset);
-        this.mWidth = this.marginLeft + this.currentWidth * this.totalCountEachRow + this.marginRight;
-        this.mHeight = this.currentHeight * this.rows;
+        this.mWidth = this.marginLeft + this.seatWidth * this.totalCountEachRow + this.marginRight;
+        this.mHeight = this.seatHeight * this.rows;
 
-        this.marginLeft = (int) Math.round(this.currentWidth / 2.0D);
+        this.marginLeft = (int) Math.round(this.seatWidth / 2.0D);
         localPaint2.setTextAlign(Paint.Align.CENTER);
         localPaint2.setAntiAlias(true);
         localPaint2.setColor(-16777216);
-        for (int i2 = 0; i2 < this.mListSeatConditions.size(); i2++) {
-            ArrayList<Integer> localArrayList = (ArrayList<Integer>) this.mListSeatConditions
-                    .get(i2);
+        for (int i = 0; i < this.mSeatConditions.size(); i++) {
+            ArrayList<Integer> localArrayList = (ArrayList<Integer>) this.mSeatConditions
+                    .get(i);
 
-            for (int i3 = 0; i3 < this.mListSeatInfos.get(i2).getSeatList()
-                    .size(); i3++) {// 2344
+            for (int j = 0; j < this.mSeatInfos.get(i).getSeatList()
+                    .size(); j++) {// 2344
                 // goto5 - 2344
-                Seat localSeat = this.mListSeatInfos.get(i2).getSeat(i3);
-                switch (((Integer) localArrayList.get(i3)).intValue()) { // 2373
+                Seat localSeat = this.mSeatInfos.get(i).getSeat(j);
+                switch (((Integer) localArrayList.get(j)).intValue()) { // 2373
                     case 0: // 2401 - 走道
                         localPaint2.setColor(0);
-                        drawSeat(i3, i2, null, paramCanvas, this.mThumbnailCanvas, localPaint2);
+                        drawSeat(j, i, null, paramCanvas, this.mThumbnailCanvas, localPaint2);
                         localPaint2.setColor(-16777216);
                         break;
                     case 1:// 可选
-                        drawSeat(i3, i2, this.mBitMapSeatNormal, paramCanvas,
+                        drawSeat(j, i, this.mBitMapSeatNormal, paramCanvas,
                                 this.mThumbnailCanvas, localPaint2);
                         break;
                     case 2://
-                        drawSeat(i3, i2, this.mBitMapSeatLock, paramCanvas,
+                        drawSeat(j, i, this.mBitMapSeatLock, paramCanvas,
                                 this.mThumbnailCanvas, localPaint2);
                         break;
                     case 3: // 2500-一已点击的状态
-                        drawSeat(i3, i2, this.mBitMapSeatChecked, paramCanvas,
+                        drawSeat(j, i, this.mBitMapSeatChecked, paramCanvas,
                                 this.mThumbnailCanvas, localPaint2);
                         break;
                     default:
@@ -350,18 +370,17 @@ public class SeatView extends View {
         }
 
         // 画排数
-        localPaint2.setTextSize(0.4F * this.currentHeight);
-        for (int i1 = 0; i1 < this.mListSeatInfos.size(); i1++) {
+        localPaint2.setTextSize(0.4F * this.seatHeight);
+        for (int i = 0; i < this.mSeatInfos.size(); i++) {
             localPaint2.setColor(-1308622848);
             paramCanvas.drawRect(new Rect((int) Math.abs(this.rowXOffset), this.marginTop
-                    + i1 * this.currentHeight, (int) Math.abs(this.rowXOffset) + this.currentWidth / 2,
-                    this.marginTop + (i1 + 1) * this.currentHeight), localPaint2);
+                    + i * this.seatHeight, (int) Math.abs(this.rowXOffset) + this.seatWidth / 2,
+                    this.marginTop + (i + 1) * this.seatHeight), localPaint2);
             localPaint2.setColor(-1);
-            paramCanvas
-                    .drawText(((SeatInfo) this.mListSeatInfos.get(i1))
-                            .getDesc(), (int) Math.abs(this.rowXOffset) + this.currentWidth / 2
-                            / 2, this.marginTop + i1 * this.currentHeight + this.currentHeight / 2 + this.marginBottom
-                            / 2, localPaint2);
+            paramCanvas.drawText(((SeatInfo) this.mSeatInfos.get(i))
+                    .getDesc(), (int) Math.abs(this.rowXOffset) + this.seatWidth / 2
+                    / 2, this.marginTop + i * this.seatHeight + this.seatHeight / 2 + this.marginBottom
+                    / 2, localPaint2);
         }
 
 
@@ -371,7 +390,7 @@ public class SeatView extends View {
             localPaint2.setStyle(Paint.Style.STROKE);
             localPaint2.setStrokeWidth(this.thumbnailViewStrokeWidth);
             this.mThumbnailCanvas.drawRect(
-                    e((int) Math.abs(this.rowXOffset), (int) Math.abs(this.rowYOffset)),
+                    getThumbnailRect((int) Math.abs(this.rowXOffset), (int) Math.abs(this.rowYOffset)),
                     localPaint2);
             localPaint2.setStyle(Paint.Style.FILL);
             // paramCanvas.restore();
@@ -392,30 +411,35 @@ public class SeatView extends View {
     /**
      * 获取两点的直线距离
      *
-     * @param paramMotionEvent
+     * @param event
      * @return
      */
-    private float getTwoPoiniterDistance(MotionEvent paramMotionEvent) {
-        float f1 = paramMotionEvent.getX(0) - paramMotionEvent.getX(1);
-        float f2 = paramMotionEvent.getY(0) - paramMotionEvent.getY(1);
+    private float getTwoPoiniterDistance(MotionEvent event) {
+        float f1 = event.getX(0) - event.getX(1);
+        float f2 = event.getY(0) - event.getY(1);
         return FloatMath.sqrt(f1 * f1 + f2 * f2);
     }
 
-    private void zoom(MotionEvent paramMotionEvent) {
-        double d1 = getTwoPoiniterDistance(paramMotionEvent);
-        if (this.t < 0.0D) {
-            this.t = d1;
+    /**
+     * 缩放操作
+     *
+     * @param event
+     */
+    private void zoom(MotionEvent event) {
+        double twoPoiniterDistance = getTwoPoiniterDistance(event);
+        if (this.preRate < 0.0D) {
+            this.preRate = twoPoiniterDistance;
         } else {
             try {
-                this.u = (d1 / this.t);
-                this.t = d1;
-                if ((this.canZoom) && (Math.round(this.u * this.currentWidth) > 0L)
-                        && (Math.round(this.u * this.currentHeight) > 0L)) {
-                    this.currentWidth = (int) Math.round(this.u * this.currentWidth);
-                    this.currentHeight = (int) Math.round(this.u * this.currentHeight);
-                    this.marginLeft = (int) Math.round(this.currentWidth / 2.0D);
+                this.rate = (twoPoiniterDistance / this.preRate);
+                this.preRate = twoPoiniterDistance;
+                if ((this.canZoom) && (Math.round(this.rate * this.seatWidth) > 0L)
+                        && (Math.round(this.rate * this.seatHeight) > 0L)) {
+                    this.seatWidth = (int) Math.round(this.rate * this.seatWidth);
+                    this.seatHeight = (int) Math.round(this.rate * this.seatHeight);
+                    this.marginLeft = (int) Math.round(this.seatWidth / 2.0D);
                     this.marginRight = this.marginLeft;
-                    this.seatDistance = (int) Math.round(this.u * this.seatDistance);
+                    this.seatDistance = (int) Math.round(this.rate * this.seatDistance);
                     if (this.seatDistance <= 0)
                         this.seatDistance = 1;
                 }
@@ -427,11 +451,11 @@ public class SeatView extends View {
     }
 
     /**
-     * new added
+     * 获得左边距
      *
      * @return
      */
-    public static int m(SeatView mSeatView) {
+    public static int getMarginLeft(SeatView mSeatView) {
         return mSeatView.marginLeft;
     }
 
@@ -439,44 +463,9 @@ public class SeatView extends View {
      * new added
      *
      * @param mSeatView
-     * @param paramInt
      * @return
      */
-    public static int m(SeatView mSeatView, int paramInt) {
-        mSeatView.V = mSeatView.V - paramInt;
-        return mSeatView.V;
-    }
-
-    /**
-     * new added
-     *
-     * @param mSeatView
-     * @return
-     */
-    public static int x(SeatView mSeatView) {
-        return mSeatView.V;
-    }
-
-    /**
-     * new added
-     *
-     * @param mSeatView
-     */
-    public static void y(SeatView mSeatView) {
-        mSeatView.a();
-    }
-
-    private void a() {
-        // postDelayed(new ag(this), 500L);
-    }
-
-    /**
-     * new added
-     *
-     * @param mSeatView
-     * @return
-     */
-    public static float w(SeatView mSeatView) {
+    public static float getRowYOffset(SeatView mSeatView) {
         return mSeatView.rowYOffset;
     }
 
@@ -486,7 +475,7 @@ public class SeatView extends View {
      * @param mSeatView
      * @return
      */
-    public static float v(SeatView mSeatView) {
+    public static float getRowXOffset(SeatView mSeatView) {
         return mSeatView.rowXOffset;
     }
 
@@ -496,7 +485,7 @@ public class SeatView extends View {
      * @param mSeatView
      * @return
      */
-    public static int u(SeatView mSeatView) {
+    public static int getHeight(SeatView mSeatView) {
         return mSeatView.mHeight;
     }
 
@@ -506,7 +495,7 @@ public class SeatView extends View {
      * @param mSeatView
      * @return
      */
-    public static int t(SeatView mSeatView) {
+    public static int getVisibleSeatMarginTop(SeatView mSeatView) {
         return mSeatView.visibleSeatMarginTop;
     }
 
@@ -516,7 +505,7 @@ public class SeatView extends View {
      * @param mSeatView
      * @return
      */
-    public static int s(SeatView mSeatView) {
+    public static int getWidth(SeatView mSeatView) {
         return mSeatView.mWidth;
     }
 
@@ -526,47 +515,47 @@ public class SeatView extends View {
      * @param mSeatView
      * @return
      */
-    public static int r(SeatView mSeatView) {
+    public static int getOffsetRow(SeatView mSeatView) {
         return mSeatView.offsetRow;
     }
 
     /**
-     * new added
+     * 获得上边距离
      *
      * @param mSeatView
      * @return
      */
-    public static int q(SeatView mSeatView) {
+    public static int getMarginTop(SeatView mSeatView) {
         return mSeatView.marginTop;
     }
 
     /**
-     * new added
+     * 获得排数
      *
      * @param mSeatView
      * @return
      */
-    public static int p(SeatView mSeatView) {
+    public static int getRows(SeatView mSeatView) {
         return mSeatView.rows;
     }
 
     /**
-     * new added
+     * 获得右边距离
      *
      * @param mSeatView
      * @return
      */
-    public static int o(SeatView mSeatView) {
+    public static int getMarginRight(SeatView mSeatView) {
         return mSeatView.marginRight;
     }
 
     /**
-     * new added
+     * 获得需要显示的排数
      *
      * @param mSeatView
      * @return
      */
-    public static int n(SeatView mSeatView) {
+    public static int getTotalCountEachRow(SeatView mSeatView) {
         return mSeatView.totalCountEachRow;
     }
 
@@ -576,51 +565,41 @@ public class SeatView extends View {
      * @param mSeatView
      * @return
      */
-    public static int l(SeatView mSeatView, int paramInt) {
-        mSeatView.visibleSeatMarginTop = mSeatView.visibleSeatMarginTop + paramInt;
+    public static int updateVisibleSeatMarginTop(SeatView mSeatView, int offset) {
+        mSeatView.visibleSeatMarginTop = mSeatView.visibleSeatMarginTop + offset;
         return mSeatView.visibleSeatMarginTop;
     }
 
     /**
-     * new added
+     * 获取座位的宽
      *
      * @param mSeatView
      * @return
      */
-    public static int l(SeatView mSeatView) {
-        return mSeatView.currentWidth;
+    public static int getSeatWidth(SeatView mSeatView) {
+        return mSeatView.seatWidth;
     }
 
     /**
-     * new added
+     * 获取座位的高
      *
      * @param mSeatView
      * @return
      */
-    public static int k(SeatView mSeatView) {
-        return mSeatView.currentWidth;
+    public static int getSeatHeight(SeatView mSeatView) {
+        return mSeatView.seatHeight;
     }
 
     /**
-     * new added
+     * 修改座位距离排数的距离
      *
      * @param mSeatView
-     * @param paramInt
+     * @param offset
      * @return
      */
-    public static int k(SeatView mSeatView, int paramInt) {
-        mSeatView.offsetRow = mSeatView.offsetRow + paramInt;
+    public static int updateOffsetRow(SeatView mSeatView, int offset) {
+        mSeatView.offsetRow = mSeatView.offsetRow + offset;
         return mSeatView.offsetRow;
-    }
-
-    /**
-     * new added
-     *
-     * @param mSeatView
-     * @return
-     */
-    public static int j(SeatView mSeatView) {
-        return mSeatView.currentHeight;
     }
 
     /**
@@ -630,7 +609,7 @@ public class SeatView extends View {
      * @param paramInt
      * @return
      */
-    public static int j(SeatView mSeatView, int paramInt) {
+    public static int setVisibleSeatMarginTop(SeatView mSeatView, int paramInt) {
         mSeatView.visibleSeatMarginTop = paramInt;
         return mSeatView.visibleSeatMarginTop;
     }
@@ -641,50 +620,22 @@ public class SeatView extends View {
      * @param mSeatView
      * @return
      */
-    public static int i(SeatView mSeatView, int paramInt) {
+    public static int setOffsetRow(SeatView mSeatView, int paramInt) {
         mSeatView.offsetRow = paramInt;
         return mSeatView.offsetRow;
     }
 
     /**
-     * new added
+     * 是否显示缩略图
      *
      * @param mSeatView
      * @return
      */
-    public static boolean i(SeatView mSeatView) {
+    public static boolean isShowThumbnail(SeatView mSeatView) {
         return mSeatView.showThumbnail;
     }
 
-    /**
-     * new added
-     *
-     * @param mSeatView
-     * @return
-     */
-    public static int h(SeatView mSeatView, int paramInt) {
-        return mSeatView.mHeight;
-    }
 
-    /**
-     * new added
-     *
-     * @param mSeatView
-     * @return
-     */
-    public static int h(SeatView mSeatView) {
-        return mSeatView.I + 1;
-    }
-
-    /**
-     * new added
-     *
-     * @param mSeatView
-     * @return
-     */
-    public static int g(SeatView mSeatView, int paramInt) {
-        return mSeatView.mWidth;
-    }
 
     /**
      * 获取最大支付座位数
@@ -692,18 +643,18 @@ public class SeatView extends View {
      * @param mSeatView
      * @return
      */
-    public static int getImaxPay(SeatView mSeatView) {
+    public static int getMaxPay(SeatView mSeatView) {
         return mSeatView.iMaxPay;
     }
 
     /**
-     * new added
+     * 设置是否显示缩略图
      *
      * @param mSeatView
      * @param param
      * @return
      */
-    public static boolean a(SeatView mSeatView, boolean param) {
+    public static boolean setShowThumbnail(SeatView mSeatView, boolean param) {
         mSeatView.showThumbnail = param;
         return mSeatView.showThumbnail;
     }
@@ -712,11 +663,11 @@ public class SeatView extends View {
      * 设置排数x轴偏移量
      *
      * @param mSeatView
-     * @param param
+     * @param rowXOffset
      * @return
      */
-    public static float a(SeatView mSeatView, float param) {
-        mSeatView.rowXOffset = param;
+    public static float setRowXOffset(SeatView mSeatView, float rowXOffset) {
+        mSeatView.rowXOffset = rowXOffset;
         return mSeatView.rowXOffset;
     }
 
@@ -724,22 +675,22 @@ public class SeatView extends View {
      * 计算是第几列
      *
      * @param mSeatView
-     * @param param
+     * @param position
      * @return
      */
-    public static int a(SeatView mSeatView, int param) {
-        return mSeatView.a(param);
+    public static int calculateLine(SeatView mSeatView, int position) {
+        return mSeatView.calculateLine(position);
     }
 
     /**
      * 计算是第几列
      *
-     * @param paramInt
+     * @param position
      * @return
      */
-    private int a(int paramInt) {
+    private int calculateLine(int position) {
         try {
-            int i1 = (paramInt + this.offsetRow - this.marginLeft) / this.currentWidth;
+            int i1 = (position + this.offsetRow - this.marginLeft) / this.seatWidth;
             return i1;
         } catch (Exception localException) {
             localException.printStackTrace();
@@ -748,23 +699,30 @@ public class SeatView extends View {
     }
 
     /**
-     * new added
+     * 获取缩放的seat的Rect
      *
      * @param mSeatView
-     * @param param1
-     * @param param2
+     * @param widthRate
+     * @param heightRate
      * @return
      */
-    public static Rect a(SeatView mSeatView, int param1, int param2) {
-        return mSeatView.f(param1, param2);
+    public static Rect getSeatRateRect(SeatView mSeatView, int widthRate, int heightRate) {
+        return mSeatView.getSeatRateRect(widthRate, heightRate);
     }
 
-    private Rect f(int paramInt1, int paramInt2) {
+    /**
+     * 获取缩放的seat的Rect
+     *
+     * @param rateWidth
+     * @param rateHeight
+     * @return
+     */
+    private Rect getSeatRateRect(int rateWidth, int rateHeight) {
         try {
-            int v1 = this.currentWidth * paramInt1 + this.marginLeft - this.offsetRow - this.seatDistance;
-            int v2 = this.currentHeight * paramInt2 + this.marginTop - this.visibleSeatMarginTop - this.seatDistance;
-            int v3 = (paramInt1 + 1) * this.currentWidth + this.marginLeft - this.offsetRow + this.seatDistance;
-            int v4 = (this.marginTop + 1) * this.currentHeight + this.marginTop - this.visibleSeatMarginTop + this.seatDistance;
+            int v1 = this.seatWidth * rateWidth + this.marginLeft - this.offsetRow - this.seatDistance;
+            int v2 = this.seatHeight * rateHeight + this.marginTop - this.visibleSeatMarginTop - this.seatDistance;
+            int v3 = (rateWidth + 1) * this.seatWidth + this.marginLeft - this.offsetRow + this.seatDistance;
+            int v4 = (this.marginTop + 1) * this.seatHeight + this.marginTop - this.visibleSeatMarginTop + this.seatDistance;
             return new Rect(v1, v2, v3, v4);
         } catch (Exception e) {
             e.printStackTrace();
@@ -778,12 +736,17 @@ public class SeatView extends View {
      * @param mSeatView
      * @return
      */
-    public static boolean a(SeatView mSeatView) {
+    public static boolean canMove(SeatView mSeatView) {
         return mSeatView.canMove;
     }
 
-    private int b() {
-        return (int) Math.round(this.currentWidth / this.seatCheckSize
+    /**
+     * 计算座位间的距离
+     *
+     * @return
+     */
+    private int calculateSeatDistance() {
+        return (int) Math.round(this.seatWidth / this.seatCheckSize
                 * this.betweenOffset);
     }
 
@@ -791,11 +754,11 @@ public class SeatView extends View {
      * 修改排数x轴的
      *
      * @param mSeatView
-     * @param param
+     * @param offset
      * @return
      */
-    public static float c(SeatView mSeatView, float param) {
-        mSeatView.rowXOffset = mSeatView.rowXOffset - param;
+    public static float updateRowXOffset(SeatView mSeatView, float offset) {
+        mSeatView.rowXOffset = mSeatView.rowXOffset - offset;
         return mSeatView.rowXOffset;
     }
 
@@ -803,22 +766,22 @@ public class SeatView extends View {
      * 设置每个座位的高度
      *
      * @param mSeatView
-     * @param param
+     * @param seatHeight
      * @return
      */
-    public static float c(SeatView mSeatView, int param) {
-        mSeatView.currentHeight = param;
-        return mSeatView.currentHeight;
+    public static float setSeatHeight(SeatView mSeatView, int seatHeight) {
+        mSeatView.seatHeight = seatHeight;
+        return mSeatView.seatHeight;
     }
 
     /**
-     * new added
+     * 设置每排的座位信息
      *
      * @param mSeatView
      * @return
      */
-    public static ArrayList c(SeatView mSeatView) {
-        return mSeatView.mListSeatInfos;
+    public static ArrayList setSeatInfos(SeatView mSeatView) {
+        return mSeatView.mSeatInfos;
     }
 
     /**
@@ -834,24 +797,24 @@ public class SeatView extends View {
     }
 
     /**
-     * new added
+     * 设置座位的宽
      *
      * @param mSeatView
      * @param param
      * @return
      */
-    public static int getSeatWidth(SeatView mSeatView, int param) {
-        mSeatView.currentWidth = param;
-        return mSeatView.currentWidth;
+    public static int setSeatWidth(SeatView mSeatView, int param) {
+        mSeatView.seatWidth = param;
+        return mSeatView.seatWidth;
     }
 
     /**
-     * new added
+     * 获取座位点击事件Listener
      *
      * @param mSeatView
      * @return
      */
-    public static OnSeatClickListener addClickListener(SeatView mSeatView) {
+    public static OnSeatClickListener getClickListener(SeatView mSeatView) {
         return mSeatView.mOnSeatClickListener;
     }
 
@@ -862,7 +825,7 @@ public class SeatView extends View {
      * @param param
      * @return
      */
-    public static float b(SeatView mSeatView, float param) {
+    public static float setRowYOffset(SeatView mSeatView, float param) {
         mSeatView.rowYOffset = param;
         return mSeatView.rowYOffset;
     }
@@ -871,32 +834,32 @@ public class SeatView extends View {
      * 计算是第几排
      *
      * @param mSeatView
-     * @param param
+     * @param position
      * @return
      */
-    public static int b(SeatView mSeatView, int param) {
-        return mSeatView.b(param);
+    public static int calculateRow(SeatView mSeatView, int position) {
+        return mSeatView.calculateRow(position);
     }
 
     /**
-     * new added
+     * 获取所有位置状态信息
      *
      * @param mSeatView
      * @return
      */
-    public static ArrayList b(SeatView mSeatView) {
-        return mSeatView.mListSeatConditions;
+    public static ArrayList getSeatConditions(SeatView mSeatView) {
+        return mSeatView.mSeatConditions;
     }
 
     /**
      * 计算是第几排
      *
-     * @param paramInt
+     * @param position
      * @return
      */
-    private int b(int paramInt) {
+    private int calculateRow(int position) {
         try {
-            int i1 = (paramInt + this.visibleSeatMarginTop - this.marginTop) / this.currentHeight;
+            int i1 = (position + this.visibleSeatMarginTop - this.marginTop) / this.seatHeight;
             return i1;
         } catch (Exception localException) {
             localException.printStackTrace();
@@ -908,11 +871,11 @@ public class SeatView extends View {
      * new added
      *
      * @param mSeatView
-     * @param param
+     * @param marginLeft
      * @return
      */
-    public static int e(SeatView mSeatView, int param) {
-        mSeatView.marginLeft = param;
+    public static int setMarginLeft(SeatView mSeatView, int marginLeft) {
+        mSeatView.marginLeft = marginLeft;
         return mSeatView.marginLeft;
     }
 
@@ -920,43 +883,21 @@ public class SeatView extends View {
      * new added
      *
      * @param mSeatView
+     * @param marginRight
      * @return
      */
-    public static int e(SeatView mSeatView) {
-        mSeatView.I--;
-        return mSeatView.I;
-    }
-
-    /**
-     * new added
-     *
-     * @param mSeatView
-     * @return
-     */
-    public static int f(SeatView mSeatView) {
-        return mSeatView.I;
-    }
-
-    /**
-     * new added
-     *
-     * @param mSeatView
-     * @param param
-     * @return
-     */
-    public static int f(SeatView mSeatView, int param) {
-        mSeatView.marginRight = param;
+    public static int setMarginRight(SeatView mSeatView, int marginRight) {
+        mSeatView.marginRight = marginRight;
         return mSeatView.marginRight;
     }
 
     /**
      * 设置按钮点击事件
      *
-     * @param paramOnSeatClickLinstener
+     * @param clickListener
      */
-    public void setOnSeatClickListener(
-            OnSeatClickListener paramOnSeatClickLinstener) {
-        this.mOnSeatClickListener = paramOnSeatClickLinstener;
+    public void setOnSeatClickListener(OnSeatClickListener clickListener) {
+        this.mOnSeatClickListener = clickListener;
     }
 
     @Override
@@ -965,44 +906,40 @@ public class SeatView extends View {
             if (this.canZoom) {
                 this.canZoom = false;
                 this.canMove = false;
-                this.t = -1.0D;
-                this.u = 1.0D;
+                this.preRate = -1.0D;
+                this.rate = 1.0D;
             }else{
                 this.canMove = true;
             }
-
             // Toast.makeText(mContext, "单点触控", Toast.LENGTH_SHORT).show();
-            while (this.currentWidth < this.minWidth || this.currentHeight < this.minHeight) {
-                this.currentWidth++;
-                this.currentHeight++;
-                this.marginLeft = (int) Math.round(this.currentWidth / 2.0D);
+            while (this.seatWidth < this.minWidth || this.seatHeight < this.minHeight) {
+                this.seatWidth++;
+                this.seatHeight++;
+                this.marginLeft = (int) Math.round(this.seatWidth / 2.0D);
                 this.marginRight = this.marginLeft;
-                this.seatDistance = b();
+                this.seatDistance = calculateSeatDistance();
                 // 滑到最左和最上
-                SeatView.i(this, 0);
-                SeatView.a(this, 0.0F);
-                SeatView.j(this, 0);
-                SeatView.b(this, 0.0F);
+                SeatView.setOffsetRow(this, 0);
+                SeatView.setRowXOffset(this, 0.0F);
+                SeatView.setVisibleSeatMarginTop(this, 0);
+                SeatView.setRowYOffset(this, 0.0F);
                 invalidate();
             }
-            while ((this.currentWidth > this.maxWidth) || (this.currentHeight > this.maxHeight)) {
-                this.currentWidth--;
-                this.currentHeight--;
-                this.marginLeft = (int) Math.round(this.currentWidth / 2.0D);
+            while ((this.seatWidth > this.maxWidth) || (this.seatHeight > this.maxHeight)) {
+                this.seatWidth--;
+                this.seatHeight--;
+                this.marginLeft = (int) Math.round(this.seatWidth / 2.0D);
                 this.marginRight = this.marginLeft;
-                this.seatDistance = b();
+                this.seatDistance = calculateSeatDistance();
                 invalidate();
             }
-
             // 移动功能-点击事件
             this.mGestureDetector.onTouchEvent(event);
         } else {
             // Toast.makeText(mContext, "多点触控", Toast.LENGTH_SHORT).show();
             this.canZoom = true;
             zoom(event);
-
         }
-
         return true;
     }
 

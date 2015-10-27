@@ -80,7 +80,7 @@ public class MainActivity extends Activity {
                 Seat mSeat = new Seat();
                 if(j<3){
                     mSeat.setNumber("Z");
-                    mConditionList.add(0);
+                    mConditionList.add(1);
                 }else{
                     mSeat.setNumber(String.valueOf(j - 2));
                     if(j>10){
