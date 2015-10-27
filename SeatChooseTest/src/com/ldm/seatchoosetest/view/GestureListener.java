@@ -8,155 +8,155 @@ import android.view.MotionEvent;
 
 
 class GestureListener extends GestureDetector.SimpleOnGestureListener {
-	private SSView mSsView;
+    private SSView mSsView;
 
-	GestureListener(SSView paramSSView) {
-		mSsView = paramSSView;
-	}
+    GestureListener(SSView paramSSView) {
+        mSsView = paramSSView;
+    }
 
-	public boolean onDoubleTap(MotionEvent paramMotionEvent) {
-		return super.onDoubleTap(paramMotionEvent);
-	}
+    public boolean onDoubleTap(MotionEvent paramMotionEvent) {
+        return super.onDoubleTap(paramMotionEvent);
+    }
 
-	public boolean onDoubleTapEvent(MotionEvent paramMotionEvent) {
-		return super.onDoubleTapEvent(paramMotionEvent);
-	}
+    public boolean onDoubleTapEvent(MotionEvent paramMotionEvent) {
+        return super.onDoubleTapEvent(paramMotionEvent);
+    }
 
-	public boolean onDown(MotionEvent paramMotionEvent) {
-		return false;
-	}
+    public boolean onDown(MotionEvent paramMotionEvent) {
+        return false;
+    }
 
-	public boolean onFling(MotionEvent paramMotionEvent1,
-			MotionEvent paramMotionEvent2, float paramFloat1, float paramFloat2) {
-		return false;
-	}
+    public boolean onFling(MotionEvent paramMotionEvent1,
+                           MotionEvent paramMotionEvent2, float paramFloat1, float paramFloat2) {
+        return false;
+    }
 
-	public void onLongPress(MotionEvent paramMotionEvent) {
-	}
+    public void onLongPress(MotionEvent paramMotionEvent) {
+    }
 
-	public boolean onScroll(MotionEvent paramMotionEvent1,
-			MotionEvent paramMotionEvent2, float x_scroll_distance, float y_scroll_distance) {
-		//ÊÇ·ñ¿ÉÒÔÒÆ¶¯ºÍµã»÷
-		if(!SSView.a(mSsView)){
-			return false;
-		}
-		//ÏÔÊ¾ËõÂÔÍ¼
-		SSView.a(mSsView,true);
-		boolean bool1 = true;
-		boolean bool2 = true;
-		if ((SSView.s(mSsView) < mSsView.getMeasuredWidth())
-				&& (0.0F == SSView.v(mSsView))){
-			bool1 = false;
-		}
-		
-		if ((SSView.u(mSsView) < mSsView.getMeasuredHeight())
-				&& (0.0F == SSView.w(mSsView))){
-			bool2  = false;
-		}
-		
-		if(bool1){
-			int k = Math.round(x_scroll_distance);
-			//ĞŞ¸ÄÅÅÊıxÖáµÄÆ«ÒÆÁ¿
-			SSView.c(mSsView, (float)k);
+    public boolean onScroll(MotionEvent paramMotionEvent1,
+                            MotionEvent paramMotionEvent2, float x_scroll_distance, float y_scroll_distance) {
+        //æ˜¯å¦å¯ä»¥ç§»åŠ¨å’Œç‚¹å‡»
+        if(!SSView.a(mSsView)){
+            return false;
+        }
+        //æ˜¾ç¤ºç¼©ç•¥å›¾
+        SSView.a(mSsView,true);
+        boolean bool1 = true;
+        boolean bool2 = true;
+        if ((SSView.s(mSsView) < mSsView.getMeasuredWidth())
+                && (0.0F == SSView.v(mSsView))){
+            bool1 = false;
+        }
+
+        if ((SSView.u(mSsView) < mSsView.getMeasuredHeight())
+                && (0.0F == SSView.w(mSsView))){
+            bool2  = false;
+        }
+
+        if(bool1){
+            int k = Math.round(x_scroll_distance);
+            //ä¿®æ”¹æ’æ•°xè½´çš„åç§»é‡
+            SSView.c(mSsView, (float)k);
 //			Log.i("TAG", SSView.v(mSsView)+"");
-			//ĞŞ¸Ä×ùÎ»¾àÀëÅÅÊıµÄºáÏò¾àÀë
-			SSView.k(mSsView, k);
+            //ä¿®æ”¹åº§ä½è·ç¦»æ’æ•°çš„æ¨ªå‘è·ç¦»
+            SSView.k(mSsView, k);
 //			Log.i("TAG", SSView.r(mSsView)+"");
-			if (SSView.r(mSsView) < 0) {
-				//»¬µ½×î×ó
-				SSView.i(mSsView, 0);
-				SSView.a(mSsView, 0.0F);
-			}
-			
-			if(SSView.r(mSsView) + mSsView.getMeasuredWidth() > SSView.s(mSsView)){
-				//»¬µ½×îÓÒ
-				SSView.i(mSsView, SSView.s(mSsView) - mSsView.getMeasuredWidth());
-				SSView.a(mSsView, (float)(mSsView.getMeasuredWidth() - SSView.s(mSsView)));
-			}
-		}
-		
-		if(bool2){
-			//ÉÏ¸ºÏÂÕı- ÍùÏÂ»¬Ôò¼õ
-			int j = Math.round(y_scroll_distance);
-			//ĞŞ¸ÄÅÅÊıyÖáµÄÆ«ÒÆÁ¿
-			SSView.d(mSsView, (float)j);
-			//ĞŞ¸Ä¿ÉÊÓ×ùÎ»¾àÀë¶¥¶ËµÄ¾àÀë
-			SSView.l(mSsView, j);
-			Log.i("TAG", SSView.t(mSsView)+"");
-			if (SSView.t(mSsView) < 0){
-				//»¬µ½¶¥
-				SSView.j(mSsView, 0);
-				SSView.b(mSsView, 0.0F);
-			}
-			
-			 if (SSView.t(mSsView) + mSsView.getMeasuredHeight() > SSView
-						.u(mSsView)){
-				//»¬µ½µ×
-					SSView.j(mSsView, SSView.u(mSsView) - mSsView.getMeasuredHeight());
-					SSView.b(mSsView, (float)(mSsView.getMeasuredHeight() - SSView.u(mSsView)));
-			 }
-		}
-		
-		mSsView.invalidate();
-		
+            if (SSView.r(mSsView) < 0) {
+                //æ»‘åˆ°æœ€å·¦
+                SSView.i(mSsView, 0);
+                SSView.a(mSsView, 0.0F);
+            }
+
+            if(SSView.r(mSsView) + mSsView.getMeasuredWidth() > SSView.s(mSsView)){
+                //æ»‘åˆ°æœ€å³
+                SSView.i(mSsView, SSView.s(mSsView) - mSsView.getMeasuredWidth());
+                SSView.a(mSsView, (float)(mSsView.getMeasuredWidth() - SSView.s(mSsView)));
+            }
+        }
+
+        if(bool2){
+            //ä¸Šè´Ÿä¸‹æ­£- å¾€ä¸‹æ»‘åˆ™å‡
+            int j = Math.round(y_scroll_distance);
+            //ä¿®æ”¹æ’æ•°yè½´çš„åç§»é‡
+            SSView.d(mSsView, (float)j);
+            //ä¿®æ”¹å¯è§†åº§ä½è·ç¦»é¡¶ç«¯çš„è·ç¦»
+            SSView.l(mSsView, j);
+            Log.i("TAG", SSView.t(mSsView)+"");
+            if (SSView.t(mSsView) < 0){
+                //æ»‘åˆ°é¡¶
+                SSView.j(mSsView, 0);
+                SSView.b(mSsView, 0.0F);
+            }
+
+            if (SSView.t(mSsView) + mSsView.getMeasuredHeight() > SSView
+                    .u(mSsView)){
+                //æ»‘åˆ°åº•
+                SSView.j(mSsView, SSView.u(mSsView) - mSsView.getMeasuredHeight());
+                SSView.b(mSsView, (float)(mSsView.getMeasuredHeight() - SSView.u(mSsView)));
+            }
+        }
+
+        mSsView.invalidate();
+
 //		Log.i("GestureDetector", "onScroll----------------------");
-		return false;
-	}
+        return false;
+    }
 
-	public void onShowPress(MotionEvent paramMotionEvent) {
-	}
+    public void onShowPress(MotionEvent paramMotionEvent) {
+    }
 
-	public boolean onSingleTapConfirmed(MotionEvent paramMotionEvent) {
-		return false;
-	}
+    public boolean onSingleTapConfirmed(MotionEvent paramMotionEvent) {
+        return false;
+    }
 
-	public boolean onSingleTapUp(MotionEvent paramMotionEvent) {
+    public boolean onSingleTapUp(MotionEvent paramMotionEvent) {
 //		Log.i("GestureDetector", "onSingleTapUp");
 //		if(!SSView.a(mSsView)){
 //			return false;
 //		}
-		//ÁĞÊı
-		int i = SSView.a(mSsView, (int)paramMotionEvent.getX());
-		//ÅÅÊı
-		int j = SSView.b(mSsView, (int) paramMotionEvent.getY());
-	
-		if((j>=0 && j< SSView.b(mSsView).size())){
-			if(i>=0 && i<((ArrayList<Integer>)(SSView.b(mSsView).get(j))).size()){
-				Log.i("TAG", "ÅÅÊı£º"+ j + "ÁĞÊı£º"+i);
-				ArrayList<Integer> localArrayList = (ArrayList<Integer>) SSView.b(mSsView).get(j);
-				switch (localArrayList.get(i).intValue()) {
-				case 3://ÒÑÑ¡ÖĞ
-					localArrayList.set(i, Integer.valueOf(1));
-					if(SSView.d(mSsView)!=null){
-						SSView.d(mSsView).a(i, j, false);
-					}
-					
-					
-					
-					break;
-				case 1://¿ÉÑ¡
-					localArrayList.set(i, Integer.valueOf(3));
-					if(SSView.d(mSsView)!=null){
-						SSView.d(mSsView).b(i, j, false);
-					}
-					break;
-				default:
-					break;
-				}
-				
-			}
-		}
-		
-		
-		
-		
-		
-		
-		
-		
-		//ÏÔÊ¾ËõÂÔÍ¼
-		SSView.a(mSsView,true);
-		mSsView.invalidate();
-		return false;
-	}
+        //åˆ—æ•°
+        int i = SSView.a(mSsView, (int)paramMotionEvent.getX());
+        //æ’æ•°
+        int j = SSView.b(mSsView, (int) paramMotionEvent.getY());
+
+        if((j>=0 && j< SSView.b(mSsView).size())){
+            if(i>=0 && i<((ArrayList<Integer>)(SSView.b(mSsView).get(j))).size()){
+                Log.i("TAG", "æ’æ•°ï¼š"+ j + "åˆ—æ•°ï¼š"+i);
+                ArrayList<Integer> localArrayList = (ArrayList<Integer>) SSView.b(mSsView).get(j);
+                switch (localArrayList.get(i).intValue()) {
+                    case 3://å·²é€‰ä¸­
+                        localArrayList.set(i, Integer.valueOf(1));
+                        if(SSView.d(mSsView)!=null){
+                            SSView.d(mSsView).a(i, j, false);
+                        }
+
+
+
+                        break;
+                    case 1://å¯é€‰
+                        localArrayList.set(i, Integer.valueOf(3));
+                        if(SSView.d(mSsView)!=null){
+                            SSView.d(mSsView).b(i, j, false);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+            }
+        }
+
+
+
+
+
+
+
+
+        //æ˜¾ç¤ºç¼©ç•¥å›¾
+        SSView.a(mSsView,true);
+        mSsView.invalidate();
+        return false;
+    }
 }

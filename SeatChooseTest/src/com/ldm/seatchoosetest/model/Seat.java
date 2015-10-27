@@ -3,45 +3,45 @@ package com.ldm.seatchoosetest.model;
 
 public class Seat
 {
-	/**ĞòºÅ£¬µ±Îª×ßµÀÊ± Îª"Z"*/
-  private String n = null;
-  /**Ëğ»µ±êÇ©*/
-  private String damagedFlg = null;
-  /**ÇéÂÂ×ù*/
-  private String loveInd = null;
+    /**åºå·ï¼Œå½“ä¸ºèµ°é“æ—¶ ä¸º"Z"*/
+    private String n = null;
+    /**æŸåæ ‡ç­¾*/
+    private String damagedFlg = null;
+    /**æƒ…ä¾£åº§*/
+    private String loveInd = null;
 
-  public void setN(String paramString)
-  {
-    this.n = paramString;
-  }
+    public void setN(String paramString)
+    {
+        this.n = paramString;
+    }
 
-  public boolean a()
-  {
-    return ("1".equals(this.loveInd)) || ("2".equals(this.loveInd));
-  }
+    public boolean a()
+    {
+        return ("1".equals(this.loveInd)) || ("2".equals(this.loveInd));
+    }
 
-  public String getN()
-  {
-    return this.n;
-  }
+    public String getN()
+    {
+        return this.n;
+    }
 
-  public void setDamagedFlg(String paramString)
-  {
-    this.damagedFlg = paramString;
-  }
+    public void setDamagedFlg(String paramString)
+    {
+        this.damagedFlg = paramString;
+    }
 
-  public String getDamagedFlg()
-  {
-    return this.damagedFlg;
-  }
+    public String getDamagedFlg()
+    {
+        return this.damagedFlg;
+    }
 
-  public void setLoveInd(String paramString)
-  {
-    this.loveInd = paramString;
-  }
+    public void setLoveInd(String paramString)
+    {
+        this.loveInd = paramString;
+    }
 
-  public String getLoveInd()
-  {
-    return this.loveInd;
-  }
+    public String getLoveInd()
+    {
+        return this.loveInd;
+    }
 }
