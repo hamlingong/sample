@@ -1,28 +1,40 @@
-package com.ldm.seatchoosetest.model;
+package com.myapp.mostlife.seatview.model;
 
-
+/**
+ * 座位信息
+ *
+ * @author hamlingong
+ */
 public class Seat
 {
     /**序号，当为走道时 为"Z"*/
-    private String n = null;
+    private String number = null;
     /**损坏标签*/
     private String damagedFlg = null;
     /**情侣座*/
     private String loveInd = null;
 
-    public void setN(String paramString)
+    /**座位状态：0 普通，1 选中，2 锁定*/
+    private int status = -1;
+
+    public void setNumber(String numberString)
     {
-        this.n = paramString;
+        this.number = numberString;
     }
 
-    public boolean a()
+    /**
+     * 是否是情侣座
+     *
+     * @return
+     */
+    public boolean isLoverSeat()
     {
         return ("1".equals(this.loveInd)) || ("2".equals(this.loveInd));
     }
 
-    public String getN()
+    public String getNumber()
     {
-        return this.n;
+        return this.number;
     }
 
     public void setDamagedFlg(String paramString)
@@ -35,6 +47,11 @@ public class Seat
         return this.damagedFlg;
     }
 
+    /**
+     * 设置情侣座
+     *
+     * @param paramString
+     */
     public void setLoveInd(String paramString)
     {
         this.loveInd = paramString;

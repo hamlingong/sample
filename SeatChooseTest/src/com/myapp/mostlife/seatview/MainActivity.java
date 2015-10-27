@@ -1,4 +1,4 @@
-package com.ldm.seatchoosetest;
+package com.myapp.mostlife.seatview;
 
 import java.util.ArrayList;
 
@@ -7,18 +7,21 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.widget.Toast;
 
-import com.ldm.seatchoosetest.model.Seat;
-import com.ldm.seatchoosetest.model.SeatInfo;
-import com.ldm.seatchoosetest.view.SSThumView;
-import com.ldm.seatchoosetest.view.SSView;
+import com.myapp.mostlife.seatview.model.Seat;
+import com.myapp.mostlife.seatview.model.SeatInfo;
+import com.myapp.mostlife.seatview.view.OnSeatClickListener;
+import com.myapp.mostlife.seatview.view.ThumbnailSeatView;
+import com.myapp.mostlife.seatview.view.SeatView;
+
+import com.myapp.mostlife.R;
 
 public class MainActivity extends Activity {
     private static final int ROW = 20;
     private static final int EACH_ROW_COUNT =30;
-    private SSView mSSView;
-    private SSThumView mSSThumView;
-    private ArrayList<SeatInfo> list_seatInfos = new ArrayList<SeatInfo>();
-    private ArrayList<ArrayList<Integer>> list_seat_conditions = new ArrayList<ArrayList<Integer>>();
+    private SeatView mSeatView;
+    private ThumbnailSeatView mThumbnailSeatView;
+    private ArrayList<SeatInfo> seatInfos = new ArrayList<SeatInfo>();
+    private ArrayList<ArrayList<Integer>> seatConditions = new ArrayList<ArrayList<Integer>>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,29 +31,29 @@ public class MainActivity extends Activity {
 
 
     private void init(){
-        mSSView = (SSView)this.findViewById(R.id.mSSView);
-        mSSThumView = (SSThumView)this.findViewById(R.id.ss_ssthumview);
+        mSeatView = (SeatView)this.findViewById(R.id.mSSView);
+        mThumbnailSeatView = (ThumbnailSeatView)this.findViewById(R.id.ss_ssthumview);
 //		mSSView.setXOffset(20);
         setSeatInfo();
-        mSSView.init(EACH_ROW_COUNT, ROW, list_seatInfos, list_seat_conditions, mSSThumView, 5);
-        mSSView.setOnSeatClickListener(new OnSeatClickListener() {
+        mSeatView.init(EACH_ROW_COUNT, ROW, seatInfos, seatConditions, mThumbnailSeatView, 5);
+        mSeatView.setOnSeatClickListener(new OnSeatClickListener() {
 
             @Override
-            public boolean b(int column_num, int row_num, boolean paramBoolean) {
+            public boolean onSelected(int column_num, int row_num, boolean paramBoolean) {
                 String desc =  "您选择了第"+(row_num+1)+"排" + " 第" + (column_num+1) +"列";
                 Toast.makeText(MainActivity.this,desc.toString(), Toast.LENGTH_SHORT).show();
                 return false;
             }
 
             @Override
-            public boolean a(int column_num, int row_num, boolean paramBoolean) {
+            public boolean onCancel(int column_num, int row_num, boolean paramBoolean) {
                 String desc =  "您取消了第"+(row_num+1)+"排" + " 第" + (column_num+1) +"列";
                 Toast.makeText(MainActivity.this,desc.toString(), Toast.LENGTH_SHORT).show();
                 return false;
             }
 
             @Override
-            public void a() {
+            public void doAction() {
                 // TODO Auto-generated method stub
 
             }
@@ -65,10 +68,9 @@ public class MainActivity extends Activity {
         return true;
     }
 
-
-
-
-
+    /**
+     * 初始化座位信息
+     */
     private void setSeatInfo(){
         for(int i =0;i<ROW;i++){//8行
             SeatInfo mSeatInfo = new SeatInfo();
@@ -77,16 +79,15 @@ public class MainActivity extends Activity {
             for(int j=0;j<EACH_ROW_COUNT;j++){//每排20个座位
                 Seat mSeat = new Seat();
                 if(j<3){
-                    mSeat.setN("Z");
+                    mSeat.setNumber("Z");
                     mConditionList.add(0);
                 }else{
-                    mSeat.setN(String.valueOf(j-2));
+                    mSeat.setNumber(String.valueOf(j - 2));
                     if(j>10){
                         mConditionList.add(2);
                     }else{
                         mConditionList.add(1);
                     }
-
                 }
                 mSeat.setDamagedFlg("");
                 mSeat.setLoveInd("0");
@@ -95,22 +96,8 @@ public class MainActivity extends Activity {
             mSeatInfo.setDesc(String.valueOf(i+1));
             mSeatInfo.setRow(String.valueOf(i+1));
             mSeatInfo.setSeatList(mSeatList);
-            list_seatInfos.add(mSeatInfo);
-            list_seat_conditions.add(mConditionList);
+            seatInfos.add(mSeatInfo);
+            seatConditions.add(mConditionList);
         }
-
-
-
     }
-
-
-
-
-
-
-
-
-
-
-
 }

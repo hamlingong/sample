@@ -9,7 +9,7 @@
 	    android:layout_height="100dp"
 	    android:background="@android:color/darker_gray"
 	    >
-	    <com.ldm.seatchoosetest.view.SSThumView
+	    <com.myapp.mostlife.seatview.view.ThumbnailSeatView
                 android:id="@+id/ss_ssthumview"
                 android:layout_width="@dimen/ss_seat_thum_size_w"
                 android:layout_height="@dimen/ss_seat_thum_size_h"
@@ -21,7 +21,7 @@
 	</RelativeLayout>
 		
     
-    	<com.ldm.seatchoosetest.view.SSView 
+    	<com.myapp.mostlife.seatview.view.SeatView
 	    android:id="@+id/mSSView"
 	    android:layout_below="@id/rl_thum"
 	    android:layout_marginTop="20dp"
