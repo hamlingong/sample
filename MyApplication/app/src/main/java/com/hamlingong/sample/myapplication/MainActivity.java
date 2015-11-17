@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+
 public class MainActivity extends AppCompatActivity {
     public String TAG = "hamlingong";
 
@@ -26,5 +27,6 @@ public class MainActivity extends AppCompatActivity {
                     ", getTranslationY:" + btText.getTranslationY() +
                     ", getLeft:" + btText.getLeft() + ", getRight:" + btText.getRight() +
                     ", getBottom:" + btText.getBottom());
+
     }
 }
